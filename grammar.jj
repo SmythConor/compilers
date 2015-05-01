@@ -1,0 +1,10 @@
+PARSER_BEGIN(EXP)
+public class {
+	public static void main(String[] args) {
+		Exp parser = new Exp(System.in);
+	}
+}
+PARSER_END(Exp)
+
+SKIP: 
+{" " | "\t" | "\n" | "\r"}
