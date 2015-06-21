@@ -8,3 +8,71 @@ PARSER_END(Exp)
 
 SKIP: 
 {" " | "\t" | "\n" | "\r"}
+
+/* Identifiers */
+TOKEN:
+{
+	<IDEN : "[0-9A-Za-z_]+">
+}
+
+TOKEN:
+{
+	<STRING : "\"[.*|^\"]\"">
+}
+
+/* Punctuation, Operators & Relations */
+TOKEN:
+{
+	<LBRACE : "{"> |
+	<RBRACE : "}"> |
+	<LPAREN : "("> |
+	<RPAREN : ")"> |
+	<LBRAC : "["> |
+	<RBRAC : "]"> |
+
+	<COMMA : ","> |
+	<SEMI_COLON : ";"> |
+	<COLON : ":"> |
+	<PERCENT : "%"> |
+	<DOT : "."> |
+	<QMARK : "?"> |
+	<EXLMARK : "!"> |
+	<ASSIGN : ":="> |
+
+	<EQ : "="> |
+	<NOTEQ : "!="> |
+	<LTE : ">="> |
+	<GTE : "<="> |
+	<GT : ">"> |
+	<LT : "<"> |
+	
+
+	<PLUS : "+"> |
+	<SUB : "-"> |
+	<MULT : "*"> |
+	<DIV : "/"> 
+}
+
+/* Keywords */
+TOKEN:
+{
+	<AND : "and"> |
+	<BOOL : "bool"> |
+	<CONST : "const"> |
+	<DO : "do"> |
+	<ELSE : "else"> |
+	<FALSE : "false"> |
+	<IF : "if"> |
+	<INT : "int"> |
+	<MAIN : "main"> |
+	<NOT : "not"> |
+	<OR : "or"> |
+	<REAL : "real"> |
+	<RETURN : "return"> |
+	<STRING : "string"> |
+	<THEN : "then"> |
+	<TRUE : "true"> |
+	<VAR : "var"> |
+	<VOID : "void"> |
+	<WHILE : "while">
+}
