@@ -13,15 +13,10 @@ PARSER_END(LexicalAnalyser)
 SKIP: 
 {" " | "\t" | "\n" | "\r"}
 
-TOKEN:
-{
-	<COMMENT: "//[.|^//]*">
-}
-
-TOKEN:
-{
-	<NOT: ~[]>
-}
+//TOKEN:
+//{
+//	<COMMENT: "//[.|^//]*">
+//}
 
 /* Identifiers */
 //TOKEN:
@@ -39,32 +34,32 @@ TOKEN:
 {
 	<EQ: "=">     |
 	<NOTEQ: "!="> |
-	<LTE : ">=">   |
-	<GTE : "<=">   |
-	<GT : ">">     |
-	<LT : "<">
+	<LTE: ">=">   |
+	<GTE: "<=">   |
+	<GT: ">">     |
+	<LT: "<">
 }
 
 /* Operators */
 TOKEN:
 {
-	<PLUS : "+"> |
-	<SUB : "-">  |
-	<MULT : "*"> |
-	<DIV : "/"> 
+	<PLUS: "+"> |
+	<SUB: "-">  |
+	<MULT: "*"> |
+	<DIV: "/"> 
 }
 
 /* Punctuation */
 TOKEN: 
 {
-	<COMMA : ",">      |
-	<SEMI_COLON : ";"> |
+	<COMMA: ",">      |
+	<SEMI_COLON: ";"> |
 	<COLON: ":">      |
 	<PERCENT: "%">    |
 	<DOT: ".">        |
-	<QMARK : "?">      |
-	<EXLMARK : "!">    |
-	<ASSIGN : ":=">    
+	<QMARK: "?">      |
+	<EXLMARK: "!">    |
+	<ASSIGN: ":=">    
 }
 
 /* Braces */
@@ -102,6 +97,11 @@ TOKEN:
 //	<WHILE : "while">
 //}
 
+TOKEN:
+{
+	<NOT: ~[]>
+}
+
 void Start() : {} {
-	<NOT>
+	(<NOT>|<LBRAC>)*
 }
