@@ -32,13 +32,13 @@ const_decl := CONST identifier:type = expression ( , identifier:type = expressio
 ```
 function := type identifier (param_list)
             BEGIN
-					  ( decl )*
+						( decl )*
 						( statement ; )*
-				    RETURN ( expression | ε  ) ;
+						RETURN ( expression | ε  ) ;
 						END
 ```
 ```
-param_list := ( identifier:type ( , identifier:type )* | ε  )
+param_list := ( identifier:type ( , identifier:type )* | ε )
 ```
 ```
 type := INT | BOOL | VOID
@@ -46,21 +46,21 @@ type := INT | BOOL | VOID
 ```
 main_prog := MAIN
              BEGIN
-						 ( decl )* 
-						 ( statement ; )* 
+						 ( decl )*
+						 ( statement ; )*
 						 END
 ```
 ```
 statement := identifier := expression
           | identifier ( arg_list )
-				  | BEGIN ( statement ; )* END
-				  | IF condition THEN statement ; ELSE statement
+					| BEGIN ( statement ; )* END
+					| IF condition THEN statement ; ELSE statement
 					| WHILE condition DO statement
-					| ε 
+					| ε
 ```
 ```
 expression := fragment ( ( + | - | * | / )  fragment )*
-           | ( expression ) 
+           | ( expression )
 					 | identifier ( arg_list )
 ```
 ```
