@@ -1,5 +1,9 @@
 /* Options */
-options { JAVA_UNICODE_ESCAPE = true; }
+options
+{
+	JAVA_UNICODE_ESCAPE = true;
+	IGNORE_CASE = true;
+}
 
 /* User Code */
 PARSER_BEGIN(LexicalAnalyser)
@@ -20,11 +24,15 @@ public class LexicalAnalyser {
 }
 PARSER_END(LexicalAnalyser)
 
-	/* Token definitions */
-SKIP:
-{" " | "\t" | "\n" | "\r"
-|  <"--" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
-|  <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+/* Token definitions */
+SKIP: /* Skips newlines/tabs/comments etc */
+{
+	" " |
+	"\t" |
+	"\n" |
+	"\r" |
+	<"--" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> |
+	<"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
 
 /* Keywords */
@@ -60,52 +68,55 @@ TOKEN:
 	<#CHAR: ["a"-"z", "A"-"Z", "0"-"9", "_"]> |
 	<ID: (<LETTER>)(<CHAR>)+> |
 	<#DIGIT : "[0-9]"> |
-	<NUM: "<DIGIT>+"> |
-	<DEC: "<NUM>*.<NUM>">
+	<#TNUM: "<DIGIT>+"> |
+	<#DEC: "<NUM>*.<NUM>"> |
+	<NUM: <DEC> | <TNUM>>
 }
-//
-///* Comnparirson Operators */
-//TOKEN:
-//{
-//	<EQ: "=">     |
-//	<NOTEQ: "!="> |
-//	<LTE: ">=">   |
-//	<GTE: "<=">   |
-//	<GT: ">">     |
-//	<LT: "<">
-//}
-//
-///* Operators */
-//TOKEN:
-//{
-//	<PLUS: "+"> |
-//	<SUB: "-">  |
-//	<MULT: "*"> |
-//	<DIV: "/"> 
-//}
-//
-///* Punctuation */
-//TOKEN: 
-//{
-//	<COMMA: ",">      |
-//	<SEMI_COLON: ";"> |
-//	<COLON: ":">      |
-//	<PERCENT: "%">    |
-//	<DOT: ".">        |
-//	<QMARK: "?">      |
-//	<EXLMARK: "!">    |
-//	<ASSIGN: ":=">
-//}
-//
-///* Braces */
+
+/* Comnparirson Operators */
 TOKEN:
 {
-//	<LBRACE: "{"> |
-//	<RBRACE: "}"> |
-	<LPAREN : "("> |
-	<RPAREN : ")">
-//	<LBRAC: "[">  |
-//	<RBRAC: "]"> 
+	<EQ: "=">     |
+	<NOTEQ: "!="> |
+	<LTE: ">=">   |
+	<GTE: "<=">   |
+	<GT: ">">     |
+	<LT: "<">
+}
+
+/* Operators */
+TOKEN:
+{
+	<PLUS: "+"> |
+	<SUB: "-">  |
+	<MULT: "*"> |
+	<DIV: "/"> 
+}
+
+/* Punctuation */
+TOKEN: 
+{
+	<COMMA: ",">      |
+	<SEMI_COLON: ";"> |
+	<COLON: ":">      |
+	<PERCENT: "%">    |
+	<DOT: ".">        |
+	<QMARK: "?">      |
+	<EXLMARK: "!">    |
+	<ASSIGN: ":=">
+}
+
+/* Braces */
+TOKEN:
+{
+	<LPAREN: "("> |
+	<RPAREN: ")">
+}
+
+/* Empty String */
+TOKEN:
+{
+	<EPSILON: "">
 }
 
 TOKEN:
@@ -113,34 +124,79 @@ TOKEN:
 	<ERR: ~[]>
 }
 
-void Keyword() : {} {
-	<AND> |
-		<BOOL> |
-		<CONST> |
-		<DO> |
-		<ELSE> |
-		<FALSE> |
-		<IF> |
-		<INT> |
-		<MAIN> |
-		<NOT> |
-		<OR> |
-		<REAL> |
-		<RETURN> |
-		<STRING> |
-		<THEN> |
-		<TRUE> |
-		<VAR> |
-		<VOID> |
-		<WHILE> |
-		<BEGIN> |
-		<END>
+void Program() : {} {
+	(Decl())*(Function())*MainProg()
 }
 
-void Identifiers() : {} {
-	<DEC> | <NUM> | <ID>
+void Decl() : {} {
+	(VarDecl() | ConstDecl())
 }
 
-void Braces() : {} {
-	<LPAREN>|<RPAREN>
+void VarDecl() : {} {
+	<VAR>IndentList()<COLON>Type()(<COMMA> IndentList()<COLON>Type())*<SEMI_COLON>
+}
+
+void ConstDecl() : {} {
+	<CONST>Identifier()<COLON>Type()<EQ>Expression()(<COMMA> Identifier()<COLON>Type()<EQ>Expression())*<SEMI_COLON>
+}
+
+void Function() : {} {
+//	Type()Identifier() eh?
+	<AND>
+}
+
+void ParamList() : {} {
+	(Identifier()<COLON>Type()(<COMMA>Identifier()<COLON>Type())* | <EPSILON>)
+}
+
+void Type() : {} {
+		<INT> | <BOOL> | <VOID>
+}
+
+void MainProg() : {} {
+	<MAIN><BEGIN>(Decl())*(Statement()<SEMI_COLON>)*<END>
+}
+
+void Statement() : {} {
+	Identifier()<ASSIGN>Expression() |
+	Identifier()(ArgList()) |
+	<BEGIN>(Statement()<SEMI_COLON>)*<END> |
+	<IF>Condition()<THEN>Statement()<SEMI_COLON><ELSE>Statement() |
+	<WHILE>Condition()<DO>Statement() |
+	<EPSILON>
+}
+
+void Expression() : {} {
+	Fragment()((<AND> | <SUB> | <MULT> | <DIV>) Fragment())* | //here
+	(Expression()) |
+	Identifier()(ArgList())
+}
+
+void Fragment() : {} {
+	Identifier() |
+	<TRUE> |
+	<FALSE> |
+	<NUM> |
+	(<PLUS> | <SUB>)Fragment() |
+	Expression()
+}
+
+void Condition() : {} { //here
+	<NOT>Condition() |
+	Expression()(<EQ> | <NOTEQ> | <LT> | <GT> | <LTE> | <GTE>)Expression() |
+	Condition()(<AND> | <OR>)Condition() |
+	Identifier()(ArgList())
+}
+
+void IndentList() : {} {
+	Identifier()(<COMMA> Identifier())*
+}
+
+void ArgList() : {} {
+	Identifier() (<COMMA> Identifier())* |
+	<EPSILON>
+}
+
+void Identifier() : {} {
+	<ID>
 }
