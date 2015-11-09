@@ -1,3 +1,3 @@
-cd bin/
-java LexicalAnalyser
-cd ../
+cd ../../../bin/
+java LexicalAnalyser ../src/main/basicL/sum_primes.bl
+cd -
