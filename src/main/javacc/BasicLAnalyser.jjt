@@ -1,0 +1,247 @@
+/* Options */
+options
+{
+	JAVA_UNICODE_ESCAPE = true;
+	IGNORE_CASE = true;
+	MULTI = true;
+	VISITOR = true;
+	NODE_DEFAULT_VOID = true;
+}
+
+/* User Code */
+PARSER_BEGIN(BasicLAnalyser)
+import java.util.Hashtable;
+import java.util.Enumeration;
+
+public class BasicLAnalyser {
+	public static void main(String[] args) {
+		/* Parser */
+		BasicLAnalyser parser = ParserUtilities.getFile(args[0]);
+
+		/* AST */
+		SimpleNode program = ParserUtilities.getAst(parser);
+		program.dump("");
+
+		/* Perfrom type checking on the program using the Symbol Table */
+		ParserUtilities.typeCheckProgram(program);
+	}
+}
+PARSER_END(BasicLAnalyser)
+
+	/* Token definitions */
+	SKIP: /* Skips newlines/tabs/comments etc */
+{
+	" " |
+		"\t" |
+		"\n" |
+		"\r" |
+		<"--" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> | //In-line comment
+		<"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/"> //multi-line comment
+}
+
+/* Keywords */
+TOKEN:
+{
+	<AND : "and"> |
+		<BOOL : "bool"> |
+		<CONST : "const"> |
+		<DO : "do"> |
+		<ELSE : "else"> |
+		<FALSE : "false"> |
+		<IF : "if"> |
+		<INT : "int"> |
+		<MAIN : "main"> |
+		<NOT : "not"> |
+		<OR : "or"> |
+		<REAL : "real"> |
+		<RETURN : "return"> |
+		<STRING : "string"> |
+		<THEN : "then"> |
+		<TRUE : "true"> |
+		<VAR : "var"> |
+		<VOID : "void"> |
+		<WHILE : "while"> |
+		<BEGIN: "begin"> |
+		<END: "end">
+}
+
+/* Identifiers */
+TOKEN:
+{
+	<#LETTER: ["a"-"z", "A"-"Z"]> |
+		<#CHAR: ["a"-"z", "A"-"Z", "0"-"9", "_"]> |
+		<ID: (<LETTER>)(<CHAR>)*> |
+		<#DIGIT : ["0"-"9"]> |
+		<NUM: (<DIGIT>)+> |
+		<DEC: (<NUM>)*"."(<NUM>)>
+}
+
+/* Comnparirson Operators */
+TOKEN:
+{
+	<EQ: "=">     |
+		<NOTEQ: "!="> |
+		<LTE: ">=">   |
+		<GTE: "<=">   |
+		<GT: ">">     |
+		<LT: "<">
+}
+
+/* Operators */
+TOKEN:
+{
+	<PLUS: "+"> |
+		<SUB: "-">  |
+		<MULT: "*"> |
+		<DIV: "/"> 
+}
+
+/* Punctuation */
+TOKEN: 
+{
+	<COMMA: ",">      |
+		<SEMI_COLON: ";"> |
+		<COLON: ":">      |
+		<DOT: ".">        |
+		<ASSIGN: ":=">
+}
+
+/* Braces */
+TOKEN:
+{
+	<LPAREN: "("> |
+		<RPAREN: ")">
+}
+
+TOKEN:
+{
+	<ERR: ~[]>
+}
+
+SimpleNode Program() #Program : {} {
+	(Decl())*
+		(Function())*
+		MainProg()
+		{ return jjtThis; }
+}
+
+void Decl() : {} {
+	(VarDecl() #VarDeclaration | ConstDecl() #ConstDeclaration)
+}
+
+void VarDecl() : {} {
+	<VAR>IdentList()<COLON>Type()(<COMMA> IdentList()<COLON>Type())*<SEMI_COLON>
+}
+
+void ConstDecl() : {} {
+	<CONST>Identifier()<COLON>Type()<EQ>Expression()(<COMMA>Identifier()<COLON>Type()<EQ>Expression())*<SEMI_COLON>
+}
+
+void Function() #Function : {} { 
+	Type()Identifier()<LPAREN>ParamList()<RPAREN>
+		<BEGIN>
+		(Decl())*
+		(Statement()<SEMI_COLON>)*
+		<RETURN>(Expression() | {})<SEMI_COLON>
+		<END>
+}
+
+void ParamList() #ParamList : {} {
+	(Identifier()<COLON>Type()(<COMMA>Identifier()<COLON>Type())* | {})
+}
+
+String Type() #Type : {} {
+	<INT> { jjtThis.value = token; return token.image; } | 
+		<BOOL> { jjtThis.value = token; return token.image; } | 
+		<VOID> { jjtThis.value = token; return token.image; }
+}
+
+void MainProg() #MainProg : {} {
+	<MAIN><BEGIN>(Decl())*(Statement()<SEMI_COLON>)*<END>
+}
+
+void Statement() #Statement : { Token t; } {
+	LOOKAHEAD(2)Identifier()<ASSIGN>Expression() |
+		<BEGIN>(Statement()<SEMI_COLON>)*<END> |
+		t = <IF>Condition()<THEN>Statement()<SEMI_COLON><ELSE>Statement() { jjtThis.value = t.image; }|
+		t = <WHILE>Condition()<DO>Statement() { jjtThis.value = t.image; }|
+		FunctionCall() |
+		{}
+}
+
+void Expression() #Expression : {} {
+	LOOKAHEAD(3)Term()(AddSubOperator()Term())* |
+		FunctionCall()
+}
+
+void Term() #Term : {} {
+	Fragment()(MulDivOperator()Fragment())* 
+}
+
+void Fragment() #Fragment : {} {
+	Identifier() |
+		Bool() |
+		Number() |
+		AddSubOperator()Fragment() |
+		<LPAREN>Expression()<RPAREN>
+}
+
+void Condition() #Condition : {} {
+	<NOT>ConditionExpression() |
+		LOOKAHEAD(2)(<LPAREN>)*ConditionExpression()(<RPAREN>)*(CondOperator()ConditionExpression())* |
+		FunctionCall()
+}
+
+void ConditionExpression() #ConditionalExpression : {} {
+	Expression()ConditionalOperator()Expression()
+}
+
+void FunctionCall() #FunctionCall : {} {
+	Identifier()<LPAREN>ArgList()<RPAREN>
+}
+
+void IdentList() #IdentList : {} {
+	Identifier()(<COMMA> (Identifier()))*
+}
+
+void ArgList() #ArgList : {} {
+	Identifier()(<COMMA> Identifier())* |
+	{}
+}
+
+String Identifier() #Identifier : {} {
+	<ID> { jjtThis.value = token; return token.image; }
+}
+
+void Number() #Number : {} {
+	<DEC> { jjtThis.value = token; } |
+		<NUM> { jjtThis.value = token; }
+}
+
+void ConditionalOperator() #ConditionalOperator : {} {
+	<EQ> { jjtThis.value = token; } |
+		<NOTEQ> { jjtThis.value = token; } |
+		<LT> { jjtThis.value = token; }|
+		<GT> { jjtThis.value = token; } |
+		<LTE> { jjtThis.value = token; } |
+		<GTE> { jjtThis.value = token; }
+}
+
+void AddSubOperator() #AddSubOperator : {} {
+	<PLUS> { jjtThis.value = token; } | 
+		<SUB> { jjtThis.value = token; }
+}
+
+void MulDivOperator() #MulDivOperator : {} {
+	<MULT> { jjtThis.value = token; } |
+		<DIV> { jjtThis.value = token; }
+}
+
+void CondOperator() #ConditionalOperator : {} {
+	<AND> { jjtThis.value = token; } |
+		<OR> { jjtThis.value = token; }
+}
+void Bool() #Bool : {} {
+	<TRUE> { jjtThis.value = token; } |
+		<FALSE> { jjtThis.value = token; }
+}

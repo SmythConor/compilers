@@ -1,0 +1,6 @@
+*.class
+Lexical*.java
+*.zip
+todo
+bin/*
+*.swp
